@@ -22,11 +22,12 @@ def generate_launch_description():
     pkg_name = "ndo_gazebo"
     pkg_share = FindPackageShare(pkg_name).find(pkg_name)
     params_file = os.path.join(pkg_share, "config", "gazebo_params.yaml")
+    model = os.path.join(pkg_share, "urdf", "ndo.gazebo.xacro")
 
     desc_pkg_name = "ndo_description"
     desc_pkg_share = FindPackageShare(desc_pkg_name).find(desc_pkg_name)
     rsp_launch = os.path.join(desc_pkg_share, "launch", "rsp.launch.py")
-    display_launch = os.path.join(desc_pkg_share, "launch", "display.launch.py")
+    rviz_config_path = os.path.join(desc_pkg_share, "rviz", "urdf_config.rviz")
 
     gazebo_pkg_name = "gazebo_ros"
     gazebo_pkg_share = FindPackageShare(gazebo_pkg_name).find(gazebo_pkg_name)
@@ -49,16 +50,18 @@ def generate_launch_description():
         condition=IfCondition(enable_teleop),
     )
 
-    rviz = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([display_launch]),
-        launch_arguments={"use_sim_time": "true", "gui": "false"}.items(),
+    rviz = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="screen",
+        arguments=["-d", rviz_config_path],
         condition=IfCondition(enable_rviz)
     )
     
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([rsp_launch]),
-        launch_arguments={"use_sim_time": "true"}.items(),
-        condition=UnlessCondition(enable_rviz)
+        launch_arguments={"use_sim_time": "true", "model": model}.items()
     )
 
     # Include the Gazebo launch file, provided by the gazebo_ros package
@@ -91,14 +94,13 @@ def generate_launch_description():
                 description="Flag to enable rviz",
             ),
             rsp,
-            rviz,
             gazebo,
             spawn_entity,
             RegisterEventHandler(
                 event_handler=OnProcessExit(
                     target_action=spawn_entity,
-                    on_exit=[controllers, teleop],
+                    on_exit=[controllers, teleop, rviz],
                 )
-            ),
+            )
         ]
     )
