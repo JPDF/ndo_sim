@@ -14,6 +14,8 @@ from launch.launch_description_sources import (
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition, UnlessCondition
+from launch.actions import RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 
 
 def generate_launch_description():
@@ -92,7 +94,11 @@ def generate_launch_description():
             rviz,
             gazebo,
             spawn_entity,
-            controllers,
-            teleop,
+            RegisterEventHandler(
+                event_handler=OnProcessExit(
+                    target_action=spawn_entity,
+                    on_exit=[controllers, teleop],
+                )
+            ),
         ]
     )
