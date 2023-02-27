@@ -40,6 +40,10 @@ def generate_launch_description():
     teleop_pkg_name = "ndo_teleop"
     teleop_pkg_share = FindPackageShare(teleop_pkg_name).find(teleop_pkg_name)
     teleop_launch = os.path.join(teleop_pkg_share, "launch", "teleop.launch.xml")
+    
+    nav_pkg_name = "ndo_nav"
+    nav_pkg_share = FindPackageShare(nav_pkg_name).find(nav_pkg_name)
+    localization_launch = os.path.join(nav_pkg_share, "launch", "localization.launch.py")
 
     enable_teleop = LaunchConfiguration("teleop")
     enable_rviz = LaunchConfiguration("rviz")
@@ -80,6 +84,8 @@ def generate_launch_description():
     )
 
     controllers = IncludeLaunchDescription(PythonLaunchDescriptionSource([ctrl_launch]))
+    
+    localization = IncludeLaunchDescription(PythonLaunchDescriptionSource([localization_launch]))
 
     return LaunchDescription(
         [
@@ -99,7 +105,7 @@ def generate_launch_description():
             RegisterEventHandler(
                 event_handler=OnProcessExit(
                     target_action=spawn_entity,
-                    on_exit=[controllers, teleop, rviz],
+                    on_exit=[controllers, teleop, rviz, localization],
                 )
             )
         ]
